@@ -1,0 +1,272 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<title>RobotSimulator</title>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+		<style>
+			body {
+				font-family: Monospace;
+				background-color: #000000;
+				margin: 0px;
+				overflow: hidden;
+			}
+		</style>
+	</head>
+	<body>
+		<script src="js/three.min.js"></script>
+		<script src="js/ColladaLoader.js"></script>
+		<script src="js/OrbitControls.js"></script>
+
+		<script>
+			var container;
+
+			var camera, controls, scene, renderer, objects, particleLight;
+			var dae = new Array();
+			
+			function load(file, scale, xpos, ypos, zpos, xrot, yrot, zrot, callback) {
+				new THREE.ColladaLoader().load(file, function colladaReady (collada) {
+					var i = dae.length;
+					dae[i] = collada.scene;
+					dae[i].scale.x = dae[i].scale.y = dae[i].scale.z = scale;
+					dae[i].position.x = xpos;
+					dae[i].position.y = ypos;
+					dae[i].position.z = zpos;
+					dae[i].rotation.x = xrot;
+					dae[i].rotation.y = yrot;
+					dae[i].rotation.z = zrot;
+					dae[i].updateMatrix();
+					
+					if (callback) {
+						callback();
+					}
+				});
+			}
+			
+			load('dae/lit.dae', 0.05, -5, -0.1, 1, -Math.PI/2, 0, 0, function () {
+				load('dae/madame.dae', 0.05, -1.1, 1.6, -0.3, -Math.PI, -Math.PI/2, 0, function () {
+					load('dae/robotcorps.dae', 0.0012, 4, 0.6, 10, -Math.PI/2, 0, 0, function() {
+						setMaterial(dae[dae.length - 1], new THREE.MeshBasicMaterial( { color: 0xffaa00, transparent: true, blending: THREE.AdditiveBlending } ) );
+							
+						load('dae/brasgauche.dae', 0.0012, 3.2, 1.2, 10, 0, -Math.PI/2, 0, function() {
+							setMaterial(dae[dae.length - 1], new THREE.MeshBasicMaterial( { color: 0xffaa00, transparent: true, blending: THREE.AdditiveBlending } ) );
+								
+							load('dae/brasdroit.dae', 0.0012, 4.8, 1.2, 10, 0, Math.PI/2, 0, function() {
+								setMaterial(dae[dae.length - 1], new THREE.MeshBasicMaterial( { color: 0xffaa00, transparent: true, blending: THREE.AdditiveBlending } ) );
+
+						
+								load('dae/staff.dae', 0.045, -4.8, 0, -2, -Math.PI/2, 0, -Math.PI/2, function() {
+									load('dae/computer.dae', 0.045, -6.5, 0, -0.5, -Math.PI/2, 0, -Math.PI/2, function() {
+										load('dae/stretcher.dae', 0.05, 2, -0.2, 0.75, -Math.PI/2, 0, 0, function() {
+											load('dae/door.dae', 0.05, 2, 0, 10, -Math.PI/2, 0, 0, function() {
+												init();
+												render();
+											});
+										});
+									});
+								});
+							});
+						});
+					});
+				});
+			});
+			
+
+			function setMaterial(node, material) {
+				node.material = material;
+
+				if (node.children) {
+					for (var i = 0; i < node.children.length; i++) {
+						setMaterial(node.children[i], material);
+					}
+				}
+			}
+			
+			var madame = 0;
+
+			function init() {
+
+				container = document.createElement('div');
+				document.body.appendChild(container);
+				
+				scene = new THREE.Scene();
+
+				camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 1, 2000);
+				camera.position.set(4, 5, 15);
+
+				controls = new THREE.OrbitControls(camera);
+				controls.addEventListener('change', updateRender);
+				document.addEventListener('keydown', function(e) {
+					switch (e.keyCode) {
+						case 68:
+							dae[2].position.x += 0.15;
+							dae[3].position.x += 0.15;
+							dae[4].position.x += 0.15;
+							
+							if (madame === 1) {
+								dae[1].position.x += 0.15;
+							}
+							
+							render();
+							break;
+							
+						case 69:
+							erwan(dae[3].position.x, dae[3].position.z);
+							break;
+			
+						case 70:
+							if (dae[3].position.y > 0.5) {
+								dae[3].position.y -= 0.05;
+								dae[4].position.y -= 0.05;
+								
+								if (madame === 1) {
+									dae[1].position.y -= 0.05;
+								}
+								
+								if (dae[3].position.z < 1.6 && dae[3].position.x > 3.2 && dae[3].position.x < 3.8 && dae[3].position.y <= 1.2) {
+									madame = 0;
+								}
+								
+								updateRender();
+							}
+							break;
+							
+						case 81:
+							dae[2].position.x -= 0.15;
+							dae[3].position.x -= 0.15;
+							dae[4].position.x -= 0.15;
+							
+							if (madame === 1) {
+								dae[1].position.x -= 0.15;
+							}
+							
+							render();
+							break;
+							
+						case 82:
+							if (dae[3].position.y < 1.3) {
+								dae[3].position.y += 0.05;
+								dae[4].position.y += 0.05;
+								
+								if (dae[3].position.z < 1.60 && dae[3].position.x > -4 && dae[3].position.x < -3.25 && dae[3].position.y > 1.1 && dae[3].position.y < 1.25) {
+									madame = 1;
+								}
+								
+								if (madame === 1) {
+									dae[1].position.y += 0.05;
+								}
+								
+								updateRender();
+							}
+							break;
+							
+						case 83:
+							dae[2].position.z += 0.15;
+							dae[3].position.z += 0.15;
+							dae[4].position.z += 0.15;
+							
+							if (madame === 1) {
+								dae[1].position.z += 0.15;
+							}
+							
+							render();
+							break;
+							
+						case 90:
+							dae[2].position.z -= 0.15;
+							dae[3].position.z -= 0.15;
+							dae[4].position.z -= 0.15;
+							
+							if (madame === 1) {
+								dae[1].position.z -= 0.15;
+							}
+							
+							render();
+							break;
+					}
+					console.log('x: ' + dae[3].position.x);
+					console.log('y: ' + dae[3].position.y);
+					console.log('z: ' + dae[3].position.z);
+				});
+				
+				function erwan(xpos, zpos) {
+					setTimeout(function() {
+						if (dae[3].rotation.x > -Math.PI/2) {
+							dae[3].rotation.x -= Math.PI/200;
+							dae[3].rotation.y += Math.PI/200;
+							
+							dae[4].rotation.x -= Math.PI/200;
+							dae[4].rotation.y -= Math.PI/200;
+							
+							updateRender();
+							erwan(xpos, zpos);
+						}
+					}, 20);
+				}
+
+				// Grid
+				var line_material = new THREE.LineBasicMaterial({ color : 0xF00B8F5, opacity : 0.2 }), geometry = new THREE.Geometry(), floor = -0.04, step = 1, size = 14;
+
+				for (var i = 0; i <= (size / step * 2); i++) {
+					geometry.vertices.push(new THREE.Vertex(new THREE.Vector3(-size, floor, i * step - size)));
+					geometry.vertices.push(new THREE.Vertex(new THREE.Vector3(size, floor, i * step - size)));
+					geometry.vertices.push(new THREE.Vertex(new THREE.Vector3(i * step - size, floor, -size)));
+					geometry.vertices.push(new THREE.Vertex(new THREE.Vector3(i * step - size, floor, size)));
+				}
+
+				var line = new THREE.Line(geometry, line_material, THREE.LinePieces);
+				scene.add(line);
+
+				// Add the COLLADA
+				for (var i = 0; i < dae.length; i++) {
+					scene.add(dae[i]);
+				}
+
+				// Lights
+				var directionalLight = new THREE.DirectionalLight(0xFFFFFF);
+				directionalLight.position.x = 10;
+				directionalLight.position.y = 5;
+				directionalLight.position.z = 10;
+				directionalLight.position.normalize();
+				scene.add(directionalLight);
+
+				var directionalLight2 = new THREE.DirectionalLight(0xFFFFFF);
+				directionalLight2.position.x = 10;
+				directionalLight2.position.y = 5;
+				directionalLight2.position.z = -10;
+				directionalLight2.position.normalize();
+				scene.add(directionalLight2);
+
+				var directionalLight3 = new THREE.DirectionalLight(0xFFFFFF);
+				directionalLight3.position.x = -10;
+				directionalLight3.position.y = 5;
+				directionalLight3.position.z = -10;
+				directionalLight3.position.normalize();
+				scene.add(directionalLight3);
+
+				var directionalLight4 = new THREE.DirectionalLight(0xFFFFFF);
+				directionalLight4.position.x = -10;
+				directionalLight4.position.y = 5;
+				directionalLight4.position.z = 10;
+				directionalLight4.position.normalize();
+				scene.add(directionalLight4);
+
+				renderer = new THREE.WebGLRenderer();
+				renderer.setSize(window.innerWidth, window.innerHeight);
+
+				container.appendChild(renderer.domElement);
+
+			}
+
+			function render() {
+				camera.position.set(dae[2].position.x, 5, dae[2].position.z + 5);
+				camera.lookAt(new THREE.Vector3(dae[2].position.x, 0, 0));
+				updateRender();
+			}
+
+			function updateRender() {
+				renderer.render(scene, camera);
+			}
+		</script>
+	</body>
+</html>
